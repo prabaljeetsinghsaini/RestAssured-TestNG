@@ -1,0 +1,120 @@
+package Tests;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Properties;
+
+import javax.mail.Authenticator;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.MimeBodyPart;
+import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
+
+import org.json.simple.JSONObject;
+import org.testng.Reporter;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.Test;
+
+import io.restassured.RestAssured;
+import io.restassured.http.Method;
+import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
+import junit.framework.Assert;
+
+public class APITesting {
+	@Test
+	public void GetRequest() {
+		RestAssured.baseURI="https://reqres.in";
+		RestAssured.when().get("/api/users?page=2").then().statusCode(200);
+		Reporter.log("GET");
+	}
+	
+	@Test
+	public void PostRequest() {
+		RestAssured.baseURI="https://reqres.in/api";
+		JSONObject reqp=new JSONObject();
+		reqp.put("name", "john");
+		reqp.put("job", "Tech");
+		RestAssured.given().body(reqp.toJSONString()).when().post("/users").then().statusCode(201);
+		Reporter.log("POST");
+	}
+	
+	@Test
+	public void PutRequest() {
+		
+		JSONObject jo=new JSONObject();
+		jo.put("name", "abd");
+		jo.put("job", "abcd");
+		System.out.println(jo.toJSONString());
+		RestAssured.baseURI="https://reqres.in/api";
+		RestAssured.given().body(jo.toJSONString()).when().put("/users/2").then().statusCode(200).log().all();
+		Reporter.log("PUT");
+	}
+	@Test
+	public void PatchRequest() {
+		
+		JSONObject jo=new JSONObject();
+		jo.put("name", "abcd");
+		jo.put("job", "abdscd");
+		System.out.println(jo.toJSONString());
+		RestAssured.baseURI="https://reqres.in/api";
+		RestAssured.given().body(jo.toJSONString()).when().put("/users/2").then().statusCode(200).log().all();
+		Reporter.log("PATCH");
+	}
+	
+	
+	@Test
+	public void DeleteRequest() {
+		
+		RestAssured.baseURI="https://reqres.in/api";
+		RestAssured.when().delete("/users/2").then().statusCode(204).log().all();
+		Reporter.log("DELETE");
+	}
+	
+    @AfterTest
+    public void mail() throws IOException {
+   	 Properties props = new Properties();
+	    props.put("mail.smtp.host", "smtp.gmail.com");
+	    props.put("mail.smtp.port", "465");
+		props.put("mail.smtp.ssl.enable", "true");
+		props.put("mail.smtp.auth", "true");
+		props.put("mail.smtp.debug","true");
+		final String username="your mail";
+		final String password="your password";
+		Session session=Session.getInstance(props,new Authenticator() {
+			@Override
+			protected PasswordAuthentication getPasswordAuthentication() {
+				return new PasswordAuthentication(username, password);
+			}
+		});
+
+	    try {
+	        MimeMessage msg = new MimeMessage(session);
+	        msg.setFrom(username);
+	        msg.setRecipients(Message.RecipientType.TO,
+	                          "Reciever mail");
+	        String path="path to your file/emailable-report.html";
+		    MimeMultipart mimeMultipart =new MimeMultipart();
+		   
+		    MimeBodyPart filemime=new MimeBodyPart();
+		   
+			
+			File f=new File(path);
+			filemime.attachFile(f);
+			
+			mimeMultipart.addBodyPart(filemime);
+			 msg.setContent(mimeMultipart);
+				
+				Transport.send(msg);
+				
+	        Transport.send(msg);System.out.println("SENT");
+	    } catch (MessagingException m) {
+	        System.out.println("send failed, exception: " + m);
+	    }
+    }
+
+}
